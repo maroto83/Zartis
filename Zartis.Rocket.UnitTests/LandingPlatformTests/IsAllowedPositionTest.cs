@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using System.Collections.Generic;
 using Xunit;
+using Zartis.Rocket.UnitTests.Builders;
 using Zartis.Rocket.UnitTests.TestSupport;
 
 namespace Zartis.Rocket.UnitTests.LandingPlatformTests
@@ -21,9 +22,10 @@ namespace Zartis.Rocket.UnitTests.LandingPlatformTests
 
             protected override void Given()
             {
-                const int size = 10;
-
-                _sut = new LandingPlatform(size, StartPosition);
+                _sut =
+                    new LandingPlatformBuilder()
+                        .WithStartPosition(StartPosition)
+                        .Build();
 
                 _expectedResult = IsAllowed;
             }
@@ -43,18 +45,18 @@ namespace Zartis.Rocket.UnitTests.LandingPlatformTests
         public class Given_A_LandingPlatform_When_Checking_IsAllowedPositionTest_And_The_Position_Is_Allowed
             : Given_A_LandingPlatform_When_Checking_IsAllowedPositionTest
         {
-            protected override Position StartPosition => new Position(5, 5);
-            protected override Position NewPosition => new Position(7, 7);
-            protected override List<Position> StoredPositions => new List<Position> { StartPosition };
+            protected override Position StartPosition => new PositionBuilder().Build();
+            protected override Position NewPosition => new PositionBuilder().WithX(7).WithY(7).Build();
+            protected override List<Position> StoredPositions => new PositionBuilder().BuildAsList();
             protected override bool IsAllowed => true;
         }
 
         public class Given_A_LandingPlatform_When_Checking_IsAllowedPositionTest_And_The_Position_Is_Not_Allowed
             : Given_A_LandingPlatform_When_Checking_IsAllowedPositionTest
         {
-            protected override Position StartPosition => new Position(5, 5);
-            protected override Position NewPosition => new Position(6, 6);
-            protected override List<Position> StoredPositions => new List<Position> { StartPosition };
+            protected override Position StartPosition => new PositionBuilder().Build();
+            protected override Position NewPosition => new PositionBuilder().WithX(6).WithY(6).Build();
+            protected override List<Position> StoredPositions => new PositionBuilder().BuildAsList();
             protected override bool IsAllowed => false;
         }
     }

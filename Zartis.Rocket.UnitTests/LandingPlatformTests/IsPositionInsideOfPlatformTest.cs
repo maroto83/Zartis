@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Xunit;
+using Zartis.Rocket.UnitTests.Builders;
 using Zartis.Rocket.UnitTests.TestSupport;
 
 namespace Zartis.Rocket.UnitTests.LandingPlatformTests
@@ -19,9 +20,10 @@ namespace Zartis.Rocket.UnitTests.LandingPlatformTests
 
             protected override void Given()
             {
-                const int size = 10;
-
-                _sut = new LandingPlatform(size, StartPosition);
+                _sut =
+                    new LandingPlatformBuilder()
+                        .WithStartPosition(StartPosition)
+                        .Build();
 
                 _expectedResult = IsInsideOfPlatform;
             }
@@ -41,16 +43,16 @@ namespace Zartis.Rocket.UnitTests.LandingPlatformTests
         public class Given_A_LandingPlatform_When_Checking_IsPositionInsideOfPlatform_And_The_Position_Is_Inside_Of_Platform
             : Given_A_LandingPlatform_When_Checking_IsPositionInsideOfPlatform
         {
-            protected override Position StartPosition => new Position(5, 5);
-            protected override Position NewPosition => new Position(7, 7);
+            protected override Position StartPosition => new PositionBuilder().Build();
+            protected override Position NewPosition => new PositionBuilder().WithX(7).WithY(7).Build();
             protected override bool IsInsideOfPlatform => true;
         }
 
         public class Given_A_LandingPlatform_When_Checking_IsPositionInsideOfPlatform_And_The_Position_Is_Not_Inside_Of_Platform
             : Given_A_LandingPlatform_When_Checking_IsPositionInsideOfPlatform
         {
-            protected override Position StartPosition => new Position(5, 5);
-            protected override Position NewPosition => new Position(16, 7);
+            protected override Position StartPosition => new PositionBuilder().Build();
+            protected override Position NewPosition => new PositionBuilder().WithX(16).WithY(7).Build();
             protected override bool IsInsideOfPlatform => false;
         }
     }
