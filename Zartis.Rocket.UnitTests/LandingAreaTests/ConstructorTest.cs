@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
-using Moq;
 using Xunit;
 using Zartis.Rocket.Contracts;
+using Zartis.Rocket.UnitTests.Builders.Mocks;
 using Zartis.Rocket.UnitTests.TestSupport;
 
 namespace Zartis.Rocket.UnitTests.LandingAreaTests
@@ -18,7 +18,7 @@ namespace Zartis.Rocket.UnitTests.LandingAreaTests
             protected override void Given()
             {
                 _dimension = 100;
-                _landingPlatform = Mock.Of<ILandingPlatform>();
+                _landingPlatform = new LandingPlatformMockBuilder().Build();
             }
 
             protected override void When()

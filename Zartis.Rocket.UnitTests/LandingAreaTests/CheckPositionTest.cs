@@ -1,9 +1,9 @@
 ﻿using FluentAssertions;
-using Moq;
 using System.Collections.Generic;
 using Xunit;
-using Zartis.Rocket.Contracts;
 using Zartis.Rocket.Enums;
+using Zartis.Rocket.UnitTests.Builders;
+using Zartis.Rocket.UnitTests.Builders.Mocks;
 using Zartis.Rocket.UnitTests.TestSupport;
 
 namespace Zartis.Rocket.UnitTests.LandingAreaTests
@@ -25,21 +25,17 @@ namespace Zartis.Rocket.UnitTests.LandingAreaTests
 
             protected override void Given()
             {
-                const int x = 5;
-                const int y = 5;
-                const int dimension = 100;
+                _position = new PositionBuilder().Build();
 
-                _position = new Position(x, y);
+                var landingPlatform =
+                    new LandingPlatformMockBuilder()
+                        .WithIsPositionInsideOfPlatformMocked(IsPositionInsideOfThePlatform)
+                        .Build();
 
-                var landingPlatformMock = new Mock<ILandingPlatform>();
-
-                landingPlatformMock
-                    .Setup(platform => platform.IsPositionInsideOfPlatform(_position))
-                    .Returns(IsPositionInsideOfThePlatform);
-
-                var landingPlatform = landingPlatformMock.Object;
-
-                _sut = new LandingArea(dimension, landingPlatform);
+                _sut =
+                    new LandingAreaBuilder()
+                        .WithLandingPlatform(landingPlatform)
+                        .Build();
 
                 _expectedResult = LandingAnswer;
                 _expectedPositions = StoredPositions;
@@ -82,14 +78,14 @@ namespace Zartis.Rocket.UnitTests.LandingAreaTests
         {
             protected override bool IsPositionInsideOfThePlatform => true;
             protected override LandingAnswers LandingAnswer => LandingAnswers.OkForLanding;
-            protected override IEnumerable<Position> StoredPositions => new List<Position> { new Position(5, 5) };
+            protected override IEnumerable<Position> StoredPositions => new PositionBuilder().BuildAsList();
         }
 
         public abstract class Given_A_LandingArea_With_A_Previous_Stored_Position_When_Checking_A_Position
             : Given_When_Then_Test
         {
             private LandingArea _sut;
-            private Position _position;
+            private Position _positionTwo;
             private LandingAnswers _result;
             private LandingAnswers _expectedResult;
             private IEnumerable<Position> _expectedPositions;
@@ -103,24 +99,29 @@ namespace Zartis.Rocket.UnitTests.LandingAreaTests
             {
                 const int x = 5;
                 const int y = 5;
-                const int dimension = 100;
 
-                var positionOne = new Position(x, y);
-                _position = new Position(x + 2, y + 2);
+                var positionOne =
+                    new PositionBuilder()
+                        .WithX(x)
+                        .WithY(y)
+                        .Build();
 
-                var landingPlatformMock = new Mock<ILandingPlatform>();
+                _positionTwo =
+                    new PositionBuilder()
+                        .WithX(x + 2)
+                        .WithY(y + 2)
+                        .Build();
 
-                landingPlatformMock
-                    .Setup(platform => platform.IsPositionInsideOfPlatform(It.IsAny<Position>()))
-                    .Returns(IsPositionInsideOfThePlatform);
+                var landingPlatform =
+                    new LandingPlatformMockBuilder()
+                        .WithIsPositionInsideOfPlatformMocked(IsPositionInsideOfThePlatform)
+                        .WithIsAllowedPositionMocked(IsAllowedPosition)
+                        .Build();
 
-                landingPlatformMock
-                    .Setup(platform => platform.IsAllowedPosition(It.IsAny<IEnumerable<Position>>(), _position))
-                    .Returns(IsAllowedPosition);
-
-                var landingPlatform = landingPlatformMock.Object;
-
-                _sut = new LandingArea(dimension, landingPlatform);
+                _sut =
+                    new LandingAreaBuilder()
+                        .WithLandingPlatform(landingPlatform)
+                        .Build();
 
                 _sut.CheckPosition(positionOne);
 
@@ -130,7 +131,7 @@ namespace Zartis.Rocket.UnitTests.LandingAreaTests
 
             protected override void When()
             {
-                _result = _sut.CheckPosition(_position);
+                _result = _sut.CheckPosition(_positionTwo);
             }
 
             [Fact]
@@ -158,7 +159,7 @@ namespace Zartis.Rocket.UnitTests.LandingAreaTests
             protected override bool IsPositionInsideOfThePlatform => true;
             protected override bool IsAllowedPosition => false;
             protected override LandingAnswers LandingAnswer => LandingAnswers.Clash;
-            protected override IEnumerable<Position> StoredPositions => new List<Position> { new Position(5, 5) };
+            protected override IEnumerable<Position> StoredPositions => new PositionBuilder().BuildAsList();
         }
 
         public class Given_A_LandingArea_With_A_Previous_Stored_Position_When_Checking_A_Position_And_The_Position_Is_Allowed
@@ -167,7 +168,15 @@ namespace Zartis.Rocket.UnitTests.LandingAreaTests
             protected override bool IsPositionInsideOfThePlatform => true;
             protected override bool IsAllowedPosition => true;
             protected override LandingAnswers LandingAnswer => LandingAnswers.OkForLanding;
-            protected override IEnumerable<Position> StoredPositions => new List<Position> { new Position(5, 5), new Position(7, 7) };
+            protected override IEnumerable<Position> StoredPositions =>
+                new List<Position>
+                {
+                    new PositionBuilder().Build(),
+                    new PositionBuilder()
+                        .WithX(7)
+                        .WithY(7)
+                        .Build()
+                };
         }
     }
 }

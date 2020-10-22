@@ -1,4 +1,6 @@
-﻿namespace Zartis.Rocket.UnitTests.Builders
+﻿using System.Collections.Generic;
+
+namespace Zartis.Rocket.UnitTests.Builders
 {
     public class PositionBuilder
     {
@@ -28,6 +30,19 @@
             var position = new Position(_x, _y);
 
             return position;
+        }
+
+        public List<Position> BuildAsList()
+        {
+            var position = Build();
+
+            var positions =
+                new List<Position>
+                {
+                    position
+                };
+
+            return positions;
         }
     }
 }
