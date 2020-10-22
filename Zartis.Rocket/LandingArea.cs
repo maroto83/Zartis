@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Zartis.Rocket.Contracts;
 using Zartis.Rocket.Enums;
+using Zartis.Rocket.Validators;
 
 namespace Zartis.Rocket
 {
@@ -10,7 +10,6 @@ namespace Zartis.Rocket
     {
         public ILandingPlatform LandingPlatform { get; }
         public int Dimension { get; }
-        private static IEnumerable<Position> Positions => StoredPositions.Positions;
 
         public LandingArea(in int dimension, ILandingPlatform landingPlatform)
         {
@@ -21,26 +20,19 @@ namespace Zartis.Rocket
 
         public LandingAnswers CheckPosition(Position position)
         {
-            if (!LandingPlatform.IsPositionInsideOfPlatform(position))
-            {
-                return LandingAnswers.OutOfPlatform;
-            }
+            var positionInsideOfPlatformRuleValidator = new PositionInsideOfPlatformRuleValidator(LandingPlatform);
+            var firstPositionRuleValidator = new FirstPositionRuleValidator();
+            var positionNotAllowedRuleValidator = new PositionNotAllowedRuleValidator(LandingPlatform);
+            var positionAllowedRuleValidator = new PositionAllowedRuleValidator();
 
-            if (!Positions.Any())
-            {
-                StoredPositions.Positions.Add(position);
+            positionInsideOfPlatformRuleValidator
+                .SetNextRuleValidator(firstPositionRuleValidator)
+                .SetNextRuleValidator(positionNotAllowedRuleValidator)
+                .SetNextRuleValidator(positionAllowedRuleValidator);
 
-                return LandingAnswers.OkForLanding;
-            }
+            var landingAnswers = positionInsideOfPlatformRuleValidator.Validate(position);
 
-            if (Positions.Any(askedPosition => !LandingPlatform.IsAllowedPosition(Positions, position)))
-            {
-                return LandingAnswers.Clash;
-            }
-
-            StoredPositions.Positions.Add(position);
-
-            return LandingAnswers.OkForLanding;
+            return landingAnswers;
         }
     }
 }
