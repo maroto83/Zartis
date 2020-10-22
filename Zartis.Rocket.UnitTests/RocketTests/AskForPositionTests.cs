@@ -1,8 +1,8 @@
 ﻿using FluentAssertions;
-using Moq;
 using Xunit;
-using Zartis.Rocket.Contracts;
 using Zartis.Rocket.Enums;
+using Zartis.Rocket.UnitTests.Builders;
+using Zartis.Rocket.UnitTests.Builders.Mocks;
 using Zartis.Rocket.UnitTests.TestSupport;
 
 namespace Zartis.Rocket.UnitTests.RocketTests
@@ -21,19 +21,17 @@ namespace Zartis.Rocket.UnitTests.RocketTests
 
             protected override void Given()
             {
-                const int x = 5;
-                const int y = 5;
+                _position = new PositionBuilder().Build();
 
-                _position = new Position(x, y);
+                var landingArea =
+                    new LandingAreaMockBuilder()
+                        .WithCheckPositionMocked(LandingAnswer, _position)
+                        .Build();
 
-                var landingAreaMock = new Mock<ILandingArea>();
-
-                landingAreaMock
-                    .Setup(area => area.CheckPosition(_position))
-                    .Returns(LandingAnswer);
-
-                var landingArea = landingAreaMock.Object;
-                _sut = new Rocket(landingArea);
+                _sut =
+                    new RocketBuilder()
+                        .WithLandingArea(landingArea)
+                        .Build();
 
                 _expectedResult = LandingAnswer;
             }
@@ -74,7 +72,7 @@ namespace Zartis.Rocket.UnitTests.RocketTests
             protected override LandingAnswers LandingAnswer => LandingAnswers.OutOfPlatform;
         }
 
-        public abstract class Given_Two_Rockets_When_The_RocketOne_Is_OkForLanding_For_A_Position
+        public abstract class Given_Two_Rockets_When_Asking_For_A_Position
             : Given_When_Then_Test
         {
             private Rocket _sut;
@@ -82,36 +80,34 @@ namespace Zartis.Rocket.UnitTests.RocketTests
             private LandingAnswers _result;
             private LandingAnswers _expectedResult;
 
+            protected abstract LandingAnswers LandingAnswerForRocketOne { get; }
             protected abstract LandingAnswers LandingAnswerForRocketTwo { get; }
 
             protected override void Given()
             {
-                const int x = 5;
-                const int y = 5;
-                const LandingAnswers landingAnswerForRocketOne = LandingAnswers.OkForLanding;
+                _position = new PositionBuilder().Build();
 
-                _position = new Position(x, y);
+                var landingAreaForRocketOne =
+                    new LandingAreaMockBuilder()
+                        .WithCheckPositionMocked(LandingAnswerForRocketOne, _position)
+                        .Build();
 
-                var landingAreaForRocketOneMock = new Mock<ILandingArea>();
+                var rocketOne =
+                    new RocketBuilder()
+                        .WithLandingArea(landingAreaForRocketOne)
+                        .Build();
 
-                landingAreaForRocketOneMock
-                    .Setup(area => area.CheckPosition(_position))
-                    .Returns(landingAnswerForRocketOne);
-
-                var landingAreaForRocketOne = landingAreaForRocketOneMock.Object;
-
-                var rocketOne = new Rocket(landingAreaForRocketOne);
                 rocketOne.AskForPosition(_position);
 
-                var landingAreaForRocketTwoMock = new Mock<ILandingArea>();
+                var landingAreaForRocketTwo =
+                    new LandingAreaMockBuilder()
+                        .WithCheckPositionMocked(LandingAnswerForRocketTwo, _position)
+                        .Build();
 
-                landingAreaForRocketTwoMock
-                    .Setup(area => area.CheckPosition(_position))
-                    .Returns(LandingAnswerForRocketTwo);
-
-                var landingAreaForRocketTwo = landingAreaForRocketTwoMock.Object;
-
-                _sut = new Rocket(landingAreaForRocketTwo);
+                _sut =
+                    new RocketBuilder()
+                        .WithLandingArea(landingAreaForRocketTwo)
+                        .Build();
 
                 _expectedResult = LandingAnswerForRocketTwo;
             }
@@ -135,177 +131,66 @@ namespace Zartis.Rocket.UnitTests.RocketTests
         }
 
         public class Given_Two_Rockets_When_The_RocketOne_Is_OkForLanding_For_A_Position_And_The_RocketTwo_Is_OkForLanding
-            : Given_Two_Rockets_When_The_RocketOne_Is_OkForLanding_For_A_Position
+            : Given_Two_Rockets_When_Asking_For_A_Position
         {
+            protected override LandingAnswers LandingAnswerForRocketOne => LandingAnswers.OkForLanding;
             protected override LandingAnswers LandingAnswerForRocketTwo => LandingAnswers.OkForLanding;
         }
 
         public class Given_Two_Rockets_When_The_RocketOne_Is_OkForLanding_For_A_Position_And_The_RocketTwo_Is_Clash
-            : Given_Two_Rockets_When_The_RocketOne_Is_OkForLanding_For_A_Position
+            : Given_Two_Rockets_When_Asking_For_A_Position
         {
+            protected override LandingAnswers LandingAnswerForRocketOne => LandingAnswers.OkForLanding;
             protected override LandingAnswers LandingAnswerForRocketTwo => LandingAnswers.Clash;
         }
 
         public class Given_Two_Rockets_When_The_RocketOne_Is_OkForLanding_For_A_Position_And_The_RocketTwo_Is_OutOfPlatform
-            : Given_Two_Rockets_When_The_RocketOne_Is_OkForLanding_For_A_Position
+            : Given_Two_Rockets_When_Asking_For_A_Position
         {
+            protected override LandingAnswers LandingAnswerForRocketOne => LandingAnswers.OkForLanding;
             protected override LandingAnswers LandingAnswerForRocketTwo => LandingAnswers.OutOfPlatform;
         }
 
-        public abstract class Given_Two_Rockets_When_The_RocketOne_Is_Clash_For_A_Position
-            : Given_When_Then_Test
-        {
-            private Rocket _sut;
-            private Position _position;
-            private LandingAnswers _result;
-            private LandingAnswers _expectedResult;
-
-            protected abstract LandingAnswers LandingAnswerForRocketTwo { get; }
-
-            protected override void Given()
-            {
-                const int x = 5;
-                const int y = 5;
-                const LandingAnswers landingAnswerForRocketOne = LandingAnswers.Clash;
-
-                _position = new Position(x, y);
-
-                var landingAreaForRocketOneMock = new Mock<ILandingArea>();
-
-                landingAreaForRocketOneMock
-                    .Setup(area => area.CheckPosition(_position))
-                    .Returns(landingAnswerForRocketOne);
-
-                var landingAreaForRocketOne = landingAreaForRocketOneMock.Object;
-
-                var rocketOne = new Rocket(landingAreaForRocketOne);
-                rocketOne.AskForPosition(_position);
-
-                var landingAreaForRocketTwoMock = new Mock<ILandingArea>();
-
-                landingAreaForRocketTwoMock
-                    .Setup(area => area.CheckPosition(_position))
-                    .Returns(LandingAnswerForRocketTwo);
-
-                var landingAreaForRocketTwo = landingAreaForRocketTwoMock.Object;
-
-                _sut = new Rocket(landingAreaForRocketTwo);
-
-                _expectedResult = LandingAnswerForRocketTwo;
-            }
-
-            protected override void When()
-            {
-                _result = _sut.AskForPosition(_position);
-            }
-
-            [Fact]
-            public void Then_It_Should_Return_A_Valid_Result()
-            {
-                _result.Should().NotBeNull();
-            }
-
-            [Fact]
-            public void Then_It_Should_Have_The_ExpectedResult()
-            {
-                _result.Should().Be(_expectedResult);
-            }
-        }
-
         public class Given_Two_Rockets_When_The_RocketOne_Is_Clash_For_A_Position_And_The_RocketTwo_Is_OkForLanding
-            : Given_Two_Rockets_When_The_RocketOne_Is_Clash_For_A_Position
+            : Given_Two_Rockets_When_Asking_For_A_Position
         {
+            protected override LandingAnswers LandingAnswerForRocketOne => LandingAnswers.Clash;
             protected override LandingAnswers LandingAnswerForRocketTwo => LandingAnswers.OkForLanding;
         }
 
         public class Given_Two_Rockets_When_The_RocketOne_Is_Clash_For_A_Position_And_The_RocketTwo_Is_Clash
-            : Given_Two_Rockets_When_The_RocketOne_Is_Clash_For_A_Position
+            : Given_Two_Rockets_When_Asking_For_A_Position
         {
+            protected override LandingAnswers LandingAnswerForRocketOne => LandingAnswers.Clash;
             protected override LandingAnswers LandingAnswerForRocketTwo => LandingAnswers.Clash;
         }
 
         public class Given_Two_Rockets_When_The_RocketOne_Is_Clash_For_A_Position_And_The_RocketTwo_Is_OutOfPlatform
-            : Given_Two_Rockets_When_The_RocketOne_Is_Clash_For_A_Position
+            : Given_Two_Rockets_When_Asking_For_A_Position
         {
+            protected override LandingAnswers LandingAnswerForRocketOne => LandingAnswers.Clash;
             protected override LandingAnswers LandingAnswerForRocketTwo => LandingAnswers.OutOfPlatform;
         }
 
-        public abstract class Given_Two_Rockets_When_The_RocketOne_Is_OutOfPlatform_For_A_Position
-            : Given_When_Then_Test
-        {
-            private Rocket _sut;
-            private Position _position;
-            private LandingAnswers _result;
-            private LandingAnswers _expectedResult;
-
-            protected abstract LandingAnswers LandingAnswer { get; }
-
-            protected override void Given()
-            {
-                const int x = 5;
-                const int y = 5;
-                const LandingAnswers landingAnswerForRocketOne = LandingAnswers.OutOfPlatform;
-
-                _position = new Position(x, y);
-
-                var landingAreaForRocketOneMock = new Mock<ILandingArea>();
-
-                landingAreaForRocketOneMock
-                    .Setup(area => area.CheckPosition(_position))
-                    .Returns(landingAnswerForRocketOne);
-
-                var landingAreaForRocketOne = landingAreaForRocketOneMock.Object;
-
-                var rocketOne = new Rocket(landingAreaForRocketOne);
-                rocketOne.AskForPosition(_position);
-
-                var landingAreaForRocketTwoMock = new Mock<ILandingArea>();
-
-                landingAreaForRocketTwoMock
-                    .Setup(area => area.CheckPosition(_position))
-                    .Returns(LandingAnswer);
-
-                var landingAreaForRocketTwo = landingAreaForRocketTwoMock.Object;
-
-                _sut = new Rocket(landingAreaForRocketTwo);
-
-                _expectedResult = LandingAnswer;
-            }
-
-            protected override void When()
-            {
-                _result = _sut.AskForPosition(_position);
-            }
-
-            [Fact]
-            public void Then_It_Should_Return_A_Valid_Result()
-            {
-                _result.Should().NotBeNull();
-            }
-
-            [Fact]
-            public void Then_It_Should_Have_The_ExpectedResult()
-            {
-                _result.Should().Be(_expectedResult);
-            }
-        }
-
         public class Given_Two_Rockets_When_The_RocketOne_Is_OutOfPlatform_For_A_Position_And_The_RocketTwo_Is_OkForLanding
-            : Given_Two_Rockets_When_The_RocketOne_Is_OutOfPlatform_For_A_Position
+            : Given_Two_Rockets_When_Asking_For_A_Position
         {
-            protected override LandingAnswers LandingAnswer => LandingAnswers.OkForLanding;
+            protected override LandingAnswers LandingAnswerForRocketOne => LandingAnswers.OutOfPlatform;
+            protected override LandingAnswers LandingAnswerForRocketTwo => LandingAnswers.OkForLanding;
         }
 
         public class Given_Two_Rockets_When_The_RocketOne_Is_OutOfPlatform_For_A_Position_And_The_RocketTwo_Is_Clash
-            : Given_Two_Rockets_When_The_RocketOne_Is_OutOfPlatform_For_A_Position
+            : Given_Two_Rockets_When_Asking_For_A_Position
         {
-            protected override LandingAnswers LandingAnswer => LandingAnswers.Clash;
+            protected override LandingAnswers LandingAnswerForRocketOne => LandingAnswers.OutOfPlatform;
+            protected override LandingAnswers LandingAnswerForRocketTwo => LandingAnswers.Clash;
         }
 
         public class Given_Two_Rockets_When_The_RocketOne_Is_OutOfPlatform_For_A_Position_And_The_RocketTwo_Is_OutOfPlatform
-            : Given_Two_Rockets_When_The_RocketOne_Is_OutOfPlatform_For_A_Position
+            : Given_Two_Rockets_When_Asking_For_A_Position
         {
-            protected override LandingAnswers LandingAnswer => LandingAnswers.OutOfPlatform;
+            protected override LandingAnswers LandingAnswerForRocketOne => LandingAnswers.OutOfPlatform;
+            protected override LandingAnswers LandingAnswerForRocketTwo => LandingAnswers.OutOfPlatform;
         }
     }
 }
